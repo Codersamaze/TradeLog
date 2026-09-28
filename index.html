@@ -131,6 +131,14 @@
         @keyframes expandIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
         .expand-in { animation: expandIn .2s ease-out both; }
 
+        /* Animasi collapse (kebalikan dari expand-in), dipicu manual lewat JS
+           di toggleExpand() karena elemen panel bakal dihapus/di-render ulang
+           setelah animasinya kelar. */
+        .collapsing {
+            overflow: hidden;
+            transition: max-height .22s ease, opacity .18s ease, transform .18s ease;
+        }
+
         .swal2-popup.swal2-toast {
             font-size: 0.9rem !important;
             display: flex !important;
@@ -505,39 +513,41 @@
 
     <!-- MODAL KARTU HASIL (long-press di kartu Total P&L) -->
     <div id="resultCardModal" onclick="if(event.target===this) closeResultCardModal()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="space-y-3 rise-in" style="width: min(380px, 100%);">
-            <div id="resultCardPreview" class="rounded-3xl p-6 relative overflow-hidden font-card" style="background: linear-gradient(160deg, #14110a 0%, #06070b 65%); border: 1px solid var(--border);">
-                <div class="flex items-center gap-2 mb-6">
-                    <div class="logo-mark w-9 h-9 text-base">📈</div>
-                    <div>
-                        <div class="font-bold text-sm text-white leading-none">Trading Log</div>
-                        <div id="resultCardDate" class="text-[10px] text-[var(--text-faint)] mt-1">–</div>
+        <div class="space-y-3 rise-in" style="width: min(640px, 100%);">
+            <div id="resultCardPreview" class="rounded-3xl p-5 sm:p-6 relative overflow-hidden font-card bg-cover bg-center" style="aspect-ratio: 1200 / 750; border: 1px solid var(--border);">
+                <div class="max-w-[48%]">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="logo-mark w-9 h-9 text-base">📈</div>
+                        <div>
+                            <div class="font-bold text-sm text-white leading-none">Trading Log</div>
+                            <div id="resultCardDate" class="text-[10px] text-[var(--text-faint)] mt-1">–</div>
+                        </div>
                     </div>
-                </div>
-                <div class="text-[10px] font-semibold tracking-wide text-[var(--text-faint)] mb-1 uppercase" id="resultCardLabel">Total P&amp;L</div>
-                <div id="resultCardTotal" class="text-4xl font-bold leading-none mb-1">–</div>
-                <div id="resultCardTotalIdr" class="text-sm text-[var(--text-dim)] mb-6">–</div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="text-center p-2.5 rounded-xl bg-white/5 border border-white/10">
-                        <div class="text-[9px] text-[var(--text-faint)] mb-1">Trades</div>
-                        <div id="resultCardCount" class="text-sm font-bold text-white">–</div>
-                    </div>
-                    <div class="text-center p-2.5 rounded-xl bg-white/5 border border-white/10">
-                        <div class="text-[9px] text-[var(--text-faint)] mb-1">Win rate</div>
-                        <div id="resultCardWinRate" class="text-sm font-bold text-white">–</div>
-                    </div>
-                    <div class="text-center p-2.5 rounded-xl bg-white/5 border border-white/10">
-                        <div class="text-[9px] text-[var(--text-faint)] mb-1">Avg Harian</div>
-                        <div id="resultCardAvgDaily" class="text-sm font-bold text-white">–</div>
+                    <div class="text-[10px] font-semibold tracking-wide text-[var(--text-faint)] mb-1 uppercase" id="resultCardLabel">Total P&amp;L</div>
+                    <div id="resultCardTotal" class="text-3xl sm:text-4xl font-bold leading-none mb-1">–</div>
+                    <div id="resultCardTotalIdr" class="text-sm text-[var(--text-dim)] mb-4">–</div>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <div class="text-center p-2 rounded-xl bg-white/5 border border-white/10">
+                            <div class="text-[8px] text-[var(--text-faint)] mb-1">Trades</div>
+                            <div id="resultCardCount" class="text-xs sm:text-sm font-bold text-white">–</div>
+                        </div>
+                        <div class="text-center p-2 rounded-xl bg-white/5 border border-white/10">
+                            <div class="text-[8px] text-[var(--text-faint)] mb-1">Win rate</div>
+                            <div id="resultCardWinRate" class="text-xs sm:text-sm font-bold text-white">–</div>
+                        </div>
+                        <div class="text-center p-2 rounded-xl bg-white/5 border border-white/10">
+                            <div class="text-[8px] text-[var(--text-faint)] mb-1">Avg Harian</div>
+                            <div id="resultCardAvgDaily" class="text-xs sm:text-sm font-bold text-white">–</div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="flex gap-2">
                 <button type="button" onclick="closeResultCardModal()" class="w-1/2 bg-[var(--surface-2)] hover:bg-[#1d2230] text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition border border-[var(--border)]">
-                    Tutup
+                    Batal
                 </button>
                 <button type="button" id="downloadResultCardBtn" onclick="downloadResultCard()" class="w-1/2 bg-amber-500 hover:bg-amber-400 text-[#1a1305] font-semibold py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20">
-                    📥 Simpan Gambar
+                    📤 Bagikan
                 </button>
             </div>
         </div>
@@ -545,30 +555,32 @@
 
     <!-- MODAL SHARE PNL PER TRADE (dari action sheet Edit/Hapus) -->
     <div id="tradeShareModal" onclick="if(event.target===this) closeTradeShareModal()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="space-y-3 rise-in" style="width: min(380px, 100%);">
-            <div id="tradeSharePreview" class="rounded-3xl p-6 relative overflow-hidden font-card" style="background: linear-gradient(160deg, #14110a 0%, #06070b 65%); border: 1px solid var(--border);">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center gap-2">
-                        <div class="logo-mark w-8 h-8 text-sm">📈</div>
-                        <div class="font-bold text-sm text-white leading-none">Trading Log</div>
+        <div class="space-y-3 rise-in" style="width: min(640px, 100%);">
+            <div id="tradeSharePreview" class="rounded-3xl p-5 sm:p-6 relative overflow-hidden font-card bg-cover bg-center" style="aspect-ratio: 1200 / 750; border: 1px solid var(--border);">
+                <div class="max-w-[48%]">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <div class="logo-mark w-8 h-8 text-sm">📈</div>
+                            <div class="font-bold text-sm text-white leading-none">Trading Log</div>
+                        </div>
+                        <div id="tradeShareBadge" class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full">–</div>
                     </div>
-                    <div id="tradeShareBadge" class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full">–</div>
-                </div>
-                <div id="tradeSharePair" class="text-2xl font-bold text-white mb-4">–</div>
-                <div class="text-[10px] font-semibold tracking-wide text-[var(--text-faint)] mb-1 uppercase">Closing P&amp;L</div>
-                <div id="tradeShareTotal" class="text-4xl font-bold leading-none mb-1">–</div>
-                <div id="tradeShareTotalIdr" class="text-sm text-[var(--text-dim)] mb-6">–</div>
-                <div class="text-center p-2.5 rounded-xl bg-white/5 border border-white/10">
-                    <div class="text-[9px] text-[var(--text-faint)] mb-1">Closed</div>
-                    <div id="tradeShareClosed" class="text-sm font-bold text-white">–</div>
+                    <div id="tradeSharePair" class="text-xl sm:text-2xl font-bold text-white mb-3">–</div>
+                    <div class="text-[10px] font-semibold tracking-wide text-[var(--text-faint)] mb-1 uppercase">Closing P&amp;L</div>
+                    <div id="tradeShareTotal" class="text-3xl sm:text-4xl font-bold leading-none mb-1">–</div>
+                    <div id="tradeShareTotalIdr" class="text-sm text-[var(--text-dim)] mb-4">–</div>
+                    <div class="text-center p-2 rounded-xl bg-white/5 border border-white/10">
+                        <div class="text-[8px] text-[var(--text-faint)] mb-1">Closed</div>
+                        <div id="tradeShareClosed" class="text-xs sm:text-sm font-bold text-white">–</div>
+                    </div>
                 </div>
             </div>
             <div class="flex gap-2">
                 <button type="button" onclick="closeTradeShareModal()" class="w-1/2 bg-[var(--surface-2)] hover:bg-[#1d2230] text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition border border-[var(--border)]">
-                    Tutup
+                    Batal
                 </button>
                 <button type="button" id="downloadTradeShareBtn" onclick="downloadTradeShare()" class="w-1/2 bg-amber-500 hover:bg-amber-400 text-[#1a1305] font-semibold py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20">
-                    📥 Simpan Gambar
+                    📤 Bagikan
                 </button>
             </div>
         </div>
@@ -1063,8 +1075,61 @@
             return div;
         }
 
+        function getDayPanelId(date) {
+            return 'dayPanel-' + String(date).replace(/[^A-Za-z0-9]/g, '');
+        }
+
+        // Toggle expand/collapse rekap harian. Kalau lagi nutup (klik ulang tanggal
+        // yang sudah expand), animasikan dulu panelnya mengecil & memudar sebelum
+        // benar-benar dihapus dari DOM lewat render ulang -> collapse jadi smooth,
+        // bukan langsung "ilang" instan kayak sebelumnya.
         function toggleExpand(date) {
-            expandedDate = (expandedDate === date) ? null : date;
+            if (expandedDate === date) {
+                const panel = document.getElementById(getDayPanelId(date));
+                if (panel) {
+                    const startHeight = panel.scrollHeight;
+                    panel.classList.remove('expand-in');
+                    panel.style.maxHeight = startHeight + 'px';
+                    panel.style.opacity = '1';
+                    panel.style.transform = 'translateY(0)';
+                    panel.classList.add('collapsing');
+                    void panel.offsetHeight; // force reflow biar transisi ke-trigger
+                    requestAnimationFrame(() => {
+                        panel.style.maxHeight = '0px';
+                        panel.style.opacity = '0';
+                        panel.style.transform = 'translateY(-4px)';
+                    });
+
+                    // Update tampilan baris & chevron duluan biar responsif,
+                    // ga nunggu render ulang yang baru jalan setelah animasi kelar.
+                    const row = panel.previousElementSibling;
+                    if (row) {
+                        const chevron = row.querySelector('.chevron');
+                        if (chevron) chevron.classList.remove('open');
+                        row.classList.remove('bg-amber-500/10', 'border-amber-500', 'ring-1', 'ring-amber-500');
+                        row.classList.add('bg-[var(--bg)]', 'border-[var(--border)]', 'hover:border-slate-600');
+                    }
+
+                    let finished = false;
+                    const finish = () => {
+                        if (finished) return;
+                        finished = true;
+                        expandedDate = null;
+                        renderDailySummary(cachedGlobalResponse.history || [], false);
+                    };
+                    panel.addEventListener('transitionend', function handler(e) {
+                        if (e.propertyName !== 'max-height') return;
+                        panel.removeEventListener('transitionend', handler);
+                        finish();
+                    });
+                    // Jaga-jaga kalau transitionend ga kepanggil (misal panel dilepas duluan)
+                    setTimeout(finish, 300);
+                    return;
+                }
+                expandedDate = null;
+            } else {
+                expandedDate = date;
+            }
             renderDailySummary(cachedGlobalResponse.history || [], false);
         }
 
@@ -1129,6 +1194,7 @@
 
                 if (isExpanded) {
                     const panel = document.createElement('div');
+                    panel.id = getDayPanelId(date);
                     panel.className = 'expand-in space-y-2 pl-1 pt-1';
                     const dayTrades = data.filter(item => item.closed === date);
                     dayTrades.forEach((item, idx) => {
@@ -1235,9 +1301,11 @@
             const total = isNetPnlView ? gross * 0.9 : gross;
             const isProfit = total >= 0;
 
+            document.getElementById('resultCardPreview').style.backgroundImage = `url('${isProfit ? CARD_BG_PROFIT : CARD_BG_LOSS}')`;
+
             const totalEl = document.getElementById('resultCardTotal');
             totalEl.textContent = `${isProfit ? '+' : ''}${total.toFixed(2)} USDT`;
-            totalEl.className = `text-4xl font-bold leading-none mb-1 ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`;
+            totalEl.className = `text-3xl sm:text-4xl font-bold leading-none mb-1 ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`;
 
             document.getElementById('resultCardLabel').textContent = isNetPnlView ? 'Total Net P&L' : 'Total P&L';
             document.getElementById('resultCardTotalIdr').textContent = formatRupiah(total * currentKursIdr);
@@ -1247,7 +1315,7 @@
             const avgDaily = lastQuickStats.daily || 0;
             const avgDailyEl = document.getElementById('resultCardAvgDaily');
             avgDailyEl.textContent = `${avgDaily >= 0 ? '+' : ''}${avgDaily.toFixed(2)}`;
-            avgDailyEl.className = `text-sm font-bold ${avgDaily >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+            avgDailyEl.className = `text-xs sm:text-sm font-bold ${avgDaily >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
             const now = new Date();
             document.getElementById('resultCardDate').textContent = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -1265,6 +1333,25 @@
         //  html2canvas nge-capture DOM (yang suka meleset buat emoji/badge kecil).
         // ══════════════════════════════
         const CARD_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+        // Background karakter custom punya user, satu folder sama index.html.
+        const CARD_BG_PROFIT = 'imgprofit-bg.png';
+        const CARD_BG_LOSS = 'imgloss-bg.png';
+        const cardBgCache = {};
+
+        function loadCardBgImage(src) {
+            if (cardBgCache[src]) return cardBgCache[src];
+            cardBgCache[src] = new Promise((resolve, reject) => {
+                const img = new Image();
+                // TIDAK pakai crossOrigin='anonymous' - gambarnya satu folder/origin
+                // yang sama, jadi ga perlu CORS. Kalau di-set, malah bikin gagal
+                // load pas file HTML dibuka langsung dari komputer (file://),
+                // karena file:// ga punya header CORS sama sekali.
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+            return cardBgCache[src];
+        }
 
         function drawRoundRectPath(ctx, x, y, w, h, r) {
             ctx.beginPath();
@@ -1307,39 +1394,21 @@
             ctx.fill();
         }
 
-        function drawCardBackground(ctx, w, h) {
-            // Fill dulu SELURUH canvas pake warna gelap solid -> biar pojok-pojok
-            // di luar area rounded-rect (yang secara teknis ga ke-fill sama
-            // gradient rounded di bawah) ga transparan/muncul putih pas dibuka.
-            ctx.fillStyle = '#06070b';
-            ctx.fillRect(0, 0, w, h);
-
-            const grad = ctx.createLinearGradient(0, 0, w, h);
-            grad.addColorStop(0, '#14110a');
-            grad.addColorStop(0.65, '#06070b');
-            drawRoundRectPath(ctx, 0.5, 0.5, w - 1, h - 1, 28);
-            ctx.fillStyle = grad;
-            ctx.fill();
-            ctx.strokeStyle = '#212635';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
-
         // Kotak label kecil di atas + nilai gede di bawah, semuanya di-center
         // pakai textBaseline 'middle' -> dijamin pas, ga meleset.
         function drawStatBox(ctx, x, y, w, h, label, value, valueColor) {
-            drawRoundRectPath(ctx, x, y, w, h, 14);
+            drawRoundRectPath(ctx, x, y, w, h, 16);
             ctx.fillStyle = 'rgba(255,255,255,0.05)';
             ctx.fill();
 
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#565e70';
-            ctx.font = `600 13px ${CARD_FONT}`;
+            ctx.font = `600 20px ${CARD_FONT}`;
             ctx.fillText(label, x + w / 2, y + h * 0.35);
 
             ctx.fillStyle = valueColor || '#ffffff';
-            ctx.font = `700 20px ${CARD_FONT}`;
+            ctx.font = `700 30px ${CARD_FONT}`;
             ctx.fillText(value, x + w / 2, y + h * 0.68);
         }
 
@@ -1351,7 +1420,29 @@
             showToast('Gambar berhasil disimpan!', 'success');
         }
 
-        function buildResultCardCanvas() {
+        // Coba pakai native share sheet HP (langsung ke WA/Instagram/dll tanpa
+        // harus masuk galeri dulu). Kalau device/browser-nya ga support fitur
+        // ini (kebanyakan browser desktop), turun otomatis ke download biasa.
+        async function shareOrDownloadCanvas(canvas, filename) {
+            if (navigator.share && navigator.canShare) {
+                try {
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    if (blob) {
+                        const file = new File([blob], filename, { type: 'image/png' });
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({ files: [file], title: 'Trading Log' });
+                            return;
+                        }
+                    }
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return; // user batal di share sheet
+                    console.log(err);
+                }
+            }
+            downloadCanvasCard(canvas, filename);
+        }
+
+        async function buildResultCardCanvas() {
             const res = cachedGlobalResponse;
             const gross = parseFloat(res.totalPnl) || 0;
             const total = isNetPnlView ? gross * 0.9 : gross;
@@ -1362,55 +1453,76 @@
             const now = new Date();
             const dateText = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
-            const W = 700, PAD = 48;
-            const H = 860;
+            const bgImg = await loadCardBgImage(isProfit ? CARD_BG_PROFIT : CARD_BG_LOSS);
+
+            // Ukuran canvas ngikutin rasio gambar background aslinya (biar
+            // karakter & framing-nya ga kepotong/ke-stretch).
+            const W = 1200;
+            const H = Math.round(W * (bgImg.naturalHeight / bgImg.naturalWidth));
             const canvas = document.createElement('canvas');
             canvas.width = W;
             canvas.height = H;
             const ctx = canvas.getContext('2d');
 
-            drawCardBackground(ctx, W, H);
+            // Fill hitam solid dulu -> gambar background lu punya area transparan
+            // di pojok bundernya, kalau ga di-fill dulu bakal muncul checkered/putih
+            // pas dibuka di viewer PNG biasa.
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, W, H);
+            ctx.drawImage(bgImg, 0, 0, W, H);
 
-            let cy = PAD;
+            // Teks cuma ditaruh di kolom kiri (area kosong di gambar), dipersempit
+            // dikit (0.46 bukan 0.5) biar ga nyenggol karakternya yang nempel di kanan.
+            const PAD = 56;
             const cx = PAD;
+            let cy = PAD;
+            const colW = W * 0.46;
 
-            const logoSize = 48;
-            drawRoundRectPath(ctx, cx, cy, logoSize, logoSize, 14);
-            ctx.fillStyle = 'rgba(217,164,65,0.12)';
+            const logoSize = 76;
+            drawRoundRectPath(ctx, cx, cy, logoSize, logoSize, 18);
+            ctx.fillStyle = 'rgba(217,164,65,0.18)';
             ctx.fill();
-            ctx.strokeStyle = 'rgba(217,164,65,0.35)';
+            ctx.strokeStyle = 'rgba(217,164,65,0.45)';
             ctx.lineWidth = 1;
             ctx.stroke();
             drawLogoIcon(ctx, cx, cy, logoSize, '#ffffff');
 
-            const textX = cx + logoSize + 14;
+            // Judul & tanggal di-center vertikal dalam tinggi kotak logo,
+            // dihitung dari tinggi baris teksnya sendiri (bukan fraksi tetap)
+            // biar rapi berapapun ukuran fontnya.
+            const textX = cx + logoSize + 18;
+            const titleFont = 33, dateFont = 23;
+            const titleLineH = titleFont * 1.15, dateLineH = dateFont * 1.15, lineGap = 8;
+            const headerTextH = titleLineH + lineGap + dateLineH;
+            const headerTextTop = cy + (logoSize - headerTextH) / 2;
             ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `700 22px ${CARD_FONT}`;
-            ctx.fillText('Trading Log', textX, cy + logoSize * 0.36);
-            ctx.fillStyle = '#565e70';
-            ctx.font = `400 15px ${CARD_FONT}`;
-            ctx.fillText(dateText, textX, cy + logoSize * 0.76);
-
-            cy += logoSize + 40;
-
             ctx.textBaseline = 'top';
-            ctx.fillStyle = '#565e70';
-            ctx.font = `700 16px ${CARD_FONT}`;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `700 ${titleFont}px ${CARD_FONT}`;
+            ctx.fillText('Trading Log', textX, headerTextTop);
+            ctx.fillStyle = '#c9cdd6';
+            ctx.font = `400 ${dateFont}px ${CARD_FONT}`;
+            ctx.fillText(dateText, textX, headerTextTop + titleLineH + lineGap);
+
+            cy += logoSize + 28;
+
+            ctx.fillStyle = '#c9cdd6';
+            ctx.font = `700 24px ${CARD_FONT}`;
             ctx.fillText(label, cx, cy);
-            cy += 16 + 10;
+            cy += 24 + 10;
 
             ctx.fillStyle = isProfit ? '#34d399' : '#fb7185';
-            ctx.font = `700 60px ${CARD_FONT}`;
+            ctx.font = `700 88px ${CARD_FONT}`;
             ctx.fillText(totalText, cx, cy);
-            cy += 60 + 14;
+            cy += 88 + 16;
 
-            ctx.fillStyle = '#8891a4';
-            ctx.font = `400 22px ${CARD_FONT}`;
+            ctx.fillStyle = '#dfe2e8';
+            ctx.font = `400 33px ${CARD_FONT}`;
             ctx.fillText(idrText, cx, cy);
-            cy += 22 + 42;
 
+            // Kotak statistik di-anchor ke BAWAH kartu (bukan nyambung dari atas)
+            // -> jaraknya ke teks di atas otomatis lega, dan ga pernah nyenggol
+            // area gambar karena tetap dalam kolom kiri yang udah dipersempit.
             const avgDaily = lastQuickStats.daily || 0;
             const avgDailyText = `${avgDaily >= 0 ? '+' : ''}${avgDaily.toFixed(2)}`;
             const stats = [
@@ -1418,21 +1530,29 @@
                 { label: 'WIN RATE', value: `${res.winRate || 0}%` },
                 { label: 'AVG HARIAN', value: avgDailyText, color: avgDaily >= 0 ? '#34d399' : '#fb7185' }
             ];
-            const boxGap = 16;
-            const boxW = (W - PAD * 2 - boxGap * 2) / 3;
-            const boxH = 100;
+            const boxGap = 10;
+            const boxW = (colW - boxGap * 2) / 3;
+            const boxH = 124;
+            const statRowY = H - PAD - boxH;
             stats.forEach((s, i) => {
-                drawStatBox(ctx, cx + i * (boxW + boxGap), cy, boxW, boxH, s.label, s.value, s.color);
+                drawStatBox(ctx, cx + i * (boxW + boxGap), statRowY, boxW, boxH, s.label, s.value, s.color);
             });
 
             return canvas;
         }
 
-        function downloadResultCard() {
-            const canvas = buildResultCardCanvas();
-            const now = new Date();
-            const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-            downloadCanvasCard(canvas, `TradingLog_Hasil_${ts}.png`);
+        async function downloadResultCard() {
+            try {
+                const canvas = await buildResultCardCanvas();
+                const now = new Date();
+                const p = n => String(n).padStart(2, '0');
+                const ts = `${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}`;
+                const kind = isNetPnlView ? 'Net' : 'Total';
+                shareOrDownloadCanvas(canvas, `TradingLog_${kind}_${ts}.png`);
+            } catch (err) {
+                console.log(err);
+                showToast('Gagal muat gambar background', 'error');
+            }
         }
 
         // ══════════════════════════════
@@ -1445,6 +1565,8 @@
             const pnlNum = parseFloat(item.pnl) || 0;
             const isProfit = pnlNum >= 0;
 
+            document.getElementById('tradeSharePreview').style.backgroundImage = `url('${isProfit ? CARD_BG_PROFIT : CARD_BG_LOSS}')`;
+
             document.getElementById('tradeSharePair').textContent = item.pair;
 
             const badgeEl = document.getElementById('tradeShareBadge');
@@ -1453,7 +1575,7 @@
 
             const totalEl = document.getElementById('tradeShareTotal');
             totalEl.textContent = `${isProfit ? '+' : ''}${pnlNum.toFixed(2)} USDT`;
-            totalEl.className = `text-4xl font-bold leading-none mb-1 ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`;
+            totalEl.className = `text-3xl sm:text-4xl font-bold leading-none mb-1 ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`;
 
             document.getElementById('tradeShareTotalIdr').textContent = formatRupiah(pnlNum * currentKursIdr);
             document.getElementById('tradeShareClosed').textContent = item.closed || '-';
@@ -1466,7 +1588,7 @@
             tradeShareItem = null;
         }
 
-        function buildTradeShareCanvas(item) {
+        async function buildTradeShareCanvas(item) {
             const pnlNum = parseFloat(item.pnl) || 0;
             const isProfit = pnlNum >= 0;
             const totalText = `${isProfit ? '+' : ''}${pnlNum.toFixed(2)} USDT`;
@@ -1475,23 +1597,32 @@
             const badgeColor = isProfit ? '#34d399' : '#fb7185';
             const badgeBg = isProfit ? 'rgba(52,211,153,0.15)' : 'rgba(251,113,133,0.15)';
 
-            const W = 700, PAD = 48;
-            const H = 760;
+            const bgImg = await loadCardBgImage(isProfit ? CARD_BG_PROFIT : CARD_BG_LOSS);
+
+            const W = 1200;
+            const H = Math.round(W * (bgImg.naturalHeight / bgImg.naturalWidth));
             const canvas = document.createElement('canvas');
             canvas.width = W;
             canvas.height = H;
             const ctx = canvas.getContext('2d');
 
-            drawCardBackground(ctx, W, H);
+            // Fill hitam solid dulu -> sama kayak di kartu hasil, biar pojok
+            // transparan gambar ga muncul checkered/putih pas di-export.
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, W, H);
+            ctx.drawImage(bgImg, 0, 0, W, H);
 
-            let cy = PAD;
+            // Kolom teks dipersempit (0.46 bukan 0.5) biar ga nyenggol karakter.
+            const PAD = 56;
             const cx = PAD;
+            let cy = PAD;
+            const colW = W * 0.46;
 
-            const logoSize = 42;
-            drawRoundRectPath(ctx, cx, cy, logoSize, logoSize, 12);
-            ctx.fillStyle = 'rgba(217,164,65,0.12)';
+            const logoSize = 64;
+            drawRoundRectPath(ctx, cx, cy, logoSize, logoSize, 16);
+            ctx.fillStyle = 'rgba(217,164,65,0.18)';
             ctx.fill();
-            ctx.strokeStyle = 'rgba(217,164,65,0.35)';
+            ctx.strokeStyle = 'rgba(217,164,65,0.45)';
             ctx.lineWidth = 1;
             ctx.stroke();
             drawLogoIcon(ctx, cx, cy, logoSize, '#ffffff');
@@ -1499,17 +1630,17 @@
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#ffffff';
-            ctx.font = `700 20px ${CARD_FONT}`;
-            ctx.fillText('Trading Log', cx + logoSize + 14, cy + logoSize / 2);
+            ctx.font = `700 30px ${CARD_FONT}`;
+            ctx.fillText('Trading Log', cx + logoSize + 16, cy + logoSize / 2);
 
-            // Badge PROFIT/LOSS pojok kanan atas, tinggi & lebar dihitung dari
-            // ukuran teksnya sendiri, di-center pakai textBaseline 'middle'.
-            ctx.font = `700 15px ${CARD_FONT}`;
+            // Badge PROFIT/LOSS: dibatasi nempel di ujung kanan KOLOM KIRI
+            // (bukan ujung kanan seluruh gambar), biar ga numpuk sama karakter.
+            ctx.font = `700 23px ${CARD_FONT}`;
             const badgeTextW = ctx.measureText(badgeText).width;
-            const badgePadX = 18;
+            const badgePadX = 22;
             const badgeW = badgeTextW + badgePadX * 2;
-            const badgeH = 40;
-            const badgeX = W - PAD - badgeW;
+            const badgeH = 48;
+            const badgeX = cx + colW - badgeW;
             const badgeY = cy + logoSize / 2 - badgeH / 2;
             drawRoundRectPath(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2);
             ctx.fillStyle = badgeBg;
@@ -1519,39 +1650,52 @@
             ctx.fillText(badgeText, badgeX + badgeW / 2, badgeY + badgeH / 2 + 1);
             ctx.textAlign = 'left';
 
-            cy += logoSize + 48;
+            cy += logoSize + 28;
 
             ctx.textBaseline = 'top';
             ctx.fillStyle = '#ffffff';
-            ctx.font = `700 40px ${CARD_FONT}`;
+            ctx.font = `700 57px ${CARD_FONT}`;
             ctx.fillText(item.pair, cx, cy);
-            cy += 40 + 30;
+            cy += 57 + 22;
 
-            ctx.fillStyle = '#565e70';
-            ctx.font = `700 16px ${CARD_FONT}`;
+            ctx.fillStyle = '#c9cdd6';
+            ctx.font = `700 24px ${CARD_FONT}`;
             ctx.fillText('CLOSING P&L', cx, cy);
-            cy += 16 + 10;
+            cy += 24 + 10;
 
             ctx.fillStyle = badgeColor;
-            ctx.font = `700 60px ${CARD_FONT}`;
+            ctx.font = `700 88px ${CARD_FONT}`;
             ctx.fillText(totalText, cx, cy);
-            cy += 60 + 14;
+            cy += 88 + 16;
 
-            ctx.fillStyle = '#8891a4';
-            ctx.font = `400 22px ${CARD_FONT}`;
+            ctx.fillStyle = '#dfe2e8';
+            ctx.font = `400 33px ${CARD_FONT}`;
             ctx.fillText(idrText, cx, cy);
-            cy += 22 + 42;
 
-            drawStatBox(ctx, cx, cy, W - PAD * 2, 100, 'CLOSED', item.closed || '-');
+            // Kotak Closed di-anchor ke BAWAH kartu, jarak ke teks di atas
+            // otomatis lega dan tetap di kolom kiri (ga nyenggol karakter).
+            const boxH = 124;
+            const statRowY = H - PAD - boxH;
+            drawStatBox(ctx, cx, statRowY, colW, boxH, 'CLOSED', item.closed || '-');
 
             return canvas;
         }
 
-        function downloadTradeShare() {
+        // Sekarang pakai shareOrDownloadCanvas (coba share sheet HP dulu) -
+        // sebelumnya fungsi ini langsung download paksa ke galeri.
+        async function downloadTradeShare() {
             if (!tradeShareItem) return;
-            const canvas = buildTradeShareCanvas(tradeShareItem);
-            const pairName = (tradeShareItem.pair || 'trade').replace(/[^A-Z0-9]/gi, '');
-            downloadCanvasCard(canvas, `TradingLog_${pairName}_PNL.png`);
+            try {
+                const canvas = await buildTradeShareCanvas(tradeShareItem);
+                const pairName = (tradeShareItem.pair || 'trade').replace(/[^A-Z0-9]/gi, '');
+                const now = new Date();
+                const p = n => String(n).padStart(2, '0');
+                const ts = `${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}`;
+                shareOrDownloadCanvas(canvas, `TradingLog_${pairName}_${ts}.png`);
+            } catch (err) {
+                console.log(err);
+                showToast('Gagal muat gambar background', 'error');
+            }
         }
 
         function renderEquityCurve(history) {
