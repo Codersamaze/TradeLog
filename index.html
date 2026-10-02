@@ -292,15 +292,15 @@
         @keyframes heatmapToastHide {
             100% { transform: rotateZ(1deg); opacity: 0; }
         }
-        #heatmapTooltip {
+        #heatmapTooltip, .heatmap-tooltip {
             opacity: 0;
             pointer-events: none;
         }
-        #heatmapTooltip.show {
+        #heatmapTooltip.show, .heatmap-tooltip.show {
             opacity: 1;
             animation: heatmapToastShow 0.4s ease forwards;
         }
-        #heatmapTooltip.hide {
+        #heatmapTooltip.hide, .heatmap-tooltip.hide {
             animation: heatmapToastHide 0.2s ease forwards;
         }
 
@@ -586,6 +586,128 @@
         }
         .carousel-dots span.active { width: 18px; background: var(--accent); }
 
+        /* Animasi geser tipis waktu ganti bulan lewat swipe */
+        @keyframes heatInNext { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+        @keyframes heatInPrev { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+        .heat-anim-next > div { animation: heatInNext .22s ease-out both; }
+        .heat-anim-prev > div { animation: heatInPrev .22s ease-out both; }
+        #heatmapCalendar, #sheetHeatmapCalendar { touch-action: pan-y; }
+
+        /* ═══════════════ LACI STATISTIK & KALENDER (khusus HP) ═══════════════ */
+        .stats-handle, .stats-backdrop, .stats-sheet { display: none; }
+        @keyframes dockGlow {
+            0%, 100% { box-shadow: 0 -14px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.09); }
+            50% { box-shadow: 0 -14px 40px rgba(0,0,0,0.6), 0 -4px 22px rgba(217,164,65,0.18), inset 0 1px 0 rgba(217,164,65,0.35); }
+        }
+        @keyframes chevFloat {
+            0%, 100% { transform: translateY(1px); opacity: .7; }
+            50% { transform: translateY(-3px); opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) { .stats-handle { animation: none; } }
+        @media (max-width: 767px) {
+            /* sedikit ruang kosong di ujung halaman supaya panah nggak menutupi baris terakhir */
+            main.relative { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+
+            .stats-handle {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                position: fixed;
+                left: 0; right: 0; bottom: 0;
+                /* panel nempel di dasar layar; area aman (gesture bar) ikut ketutup */
+                height: calc(46px + env(safe-area-inset-bottom, 0px));
+                padding: 0 0 env(safe-area-inset-bottom, 0px);
+                z-index: 30;
+                color: var(--accent-bright);
+                background: linear-gradient(180deg, rgba(30,34,48,0.97), rgba(12,15,23,0.99));
+                -webkit-backdrop-filter: blur(18px) saturate(140%);
+                backdrop-filter: blur(18px) saturate(140%);
+                border: 1px solid rgba(255,255,255,0.08);
+                border-bottom: 0;
+                border-radius: 24px 24px 0 0;
+                box-shadow: 0 -14px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.09);
+                touch-action: none;
+                -webkit-tap-highlight-color: transparent;
+                animation: dockGlow 3.6s ease-in-out infinite;
+                transition: opacity .2s ease, transform .25s ease;
+            }
+            .stats-handle svg { animation: chevFloat 1.9s ease-in-out infinite; }
+            .stats-handle .dock-label { font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--text-dim); line-height: 1; }
+            body.stats-open .stats-handle,
+            body.kb-open .stats-handle { opacity: 0; pointer-events: none; transform: translateY(100%); }
+
+            .stats-backdrop {
+                display: block;
+                position: fixed;
+                inset: 0;
+                z-index: 40;
+                background: rgba(4,5,8,0.62);
+                -webkit-backdrop-filter: blur(6px);
+                backdrop-filter: blur(6px);
+                opacity: 0;
+                pointer-events: none;
+                touch-action: none;
+                transition: opacity .28s ease;
+            }
+            .stats-backdrop.open { opacity: 1; pointer-events: auto; }
+
+            .stats-sheet {
+                display: flex;
+                flex-direction: column;
+                position: fixed;
+                left: 0; right: 0; bottom: 0;
+                z-index: 41;
+                max-height: 82vh;
+                max-height: 82dvh;
+                transform: translateY(100%);
+                visibility: hidden;
+                transition: transform .38s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear .38s;
+                border-radius: 26px 26px 0 0;
+                background: linear-gradient(180deg, rgba(26,30,43,0.98), rgba(12,15,23,0.99));
+                border: 1px solid rgba(255,255,255,0.08);
+                border-bottom: 0;
+                box-shadow: 0 -30px 80px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.07);
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+                overflow: hidden;
+            }
+            .stats-sheet::before {
+                content: '';
+                position: absolute;
+                left: 0; right: 0; top: 0;
+                height: 1px;
+                background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+                opacity: .7;
+                pointer-events: none;
+            }
+            .stats-sheet.open { transform: translateY(0); visibility: visible; transition: transform .38s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s; }
+            .stats-sheet.dragging { transition: none !important; visibility: visible; }
+
+            .stats-grab {
+                flex-shrink: 0;
+                display: flex;
+                justify-content: center;
+                padding: 12px 0 10px;
+                touch-action: none;
+                cursor: grab;
+            }
+            .stats-grab span { width: 38px; height: 4px; border-radius: 999px; background: rgba(255,255,255,0.2); }
+            .stats-sheet-body {
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                padding: 2px 12px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .stats-handle svg { animation: none; }
+            .heat-anim-next > div, .heat-anim-prev > div { animation: none; }
+            .stats-handle, .stats-backdrop, .stats-sheet { transition-duration: .01ms !important; }
+        }
+
         /* ═══════════════ HORMATI "KURANGI ANIMASI" ═══════════════ */
         @media (prefers-reduced-motion: reduce) {
             #actionModal, #editModal, #deleteModal, #resultCardModal, #tradeShareModal, #dailyShareModal,
@@ -604,7 +726,7 @@
         <div class="space-y-2.5 lg:flex lg:flex-col">
 
             <!-- HERO: Total PNL + Equity Curve -->
-            <div class="porto-card hero-panel rounded-3xl p-4 md:p-5 lg:shrink-0"
+            <div class="porto-card hero-panel hold-target rounded-3xl p-4 md:p-5 lg:shrink-0"
                 onmousedown="startHeroLongPress(event)"
                 onmousemove="moveHeroLongPress(event)"
                 onmouseup="clearHeroLongPress()"
@@ -743,7 +865,7 @@
                         </div>
                     </div>
                     <div id="heatmapCalendar" class="lg:flex-1 lg:flex lg:flex-col lg:min-h-0"></div>
-                    <div id="heatmapTooltip" class="absolute z-20 px-2 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] shadow-lg text-center whitespace-nowrap"></div>
+                    <div id="heatmapTooltip" class="heatmap-tooltip absolute z-20 px-2 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] shadow-lg text-center whitespace-nowrap"></div>
                 </div>
 
             </div>
@@ -793,6 +915,41 @@
 
     </div>
     </main>
+
+    <!-- LACI STATISTIK & KALENDER AKTIVITAS (khusus HP): panah tumpul di paling bawah, tarik ke atas -->
+    <button type="button" id="statsHandle" class="stats-handle" aria-label="Buka statistik dan kalender aktivitas">
+        <svg width="44" height="16" viewBox="0 0 44 16" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline id="statsDockPoly" points="6,8 22,3 38,8"/></svg>
+        <span class="dock-label">Statistik &amp; kalender</span>
+    </button>
+    <div id="statsSheetBackdrop" class="stats-backdrop" onclick="closeStatsSheet()"></div>
+    <div id="statsSheet" class="stats-sheet" aria-hidden="true">
+        <div id="statsSheetGrab" class="stats-grab"><svg width="44" height="16" viewBox="0 0 44 16" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline id="statsGrabPoly" points="6,8 22,8 38,8"/></svg></div>
+        <div class="stats-sheet-body custom-scroll">
+            <div class="porto-card p-3.5 rounded-2xl shrink-0 cursor-pointer active:opacity-70 transition" onclick="toggleQuickStatsView()">
+                <div class="flex items-center gap-2 mb-2.5">
+                    <span class="section-dot"></span>
+                    <h2 class="section-label">Statistik</h2>
+                </div>
+                <div id="sheetStatsGrid" class="grid grid-cols-3 gap-2"></div>
+            </div>
+
+            <div class="porto-card p-3.5 rounded-2xl relative shrink-0">
+                <div class="flex items-center justify-between mb-2.5">
+                    <div class="flex items-center gap-2">
+                        <span class="section-dot"></span>
+                        <h2 class="section-label">Kalender aktivitas</h2>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="changeHeatmapMonth(-1)" class="w-5 h-5 flex items-center justify-center rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-dim)] hover:text-white hover:border-slate-500 transition text-[10px]">‹</button>
+                        <span id="sheetHeatmapMonthLabel" class="text-[10px] text-[var(--text-faint)] w-28 text-center whitespace-nowrap shrink-0"></span>
+                        <button type="button" onclick="changeHeatmapMonth(1)" class="w-5 h-5 flex items-center justify-center rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-dim)] hover:text-white hover:border-slate-500 transition text-[10px]">›</button>
+                    </div>
+                </div>
+                <div id="sheetHeatmapCalendar"></div>
+                <div class="heatmap-tooltip absolute z-20 px-2 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] shadow-lg text-center whitespace-nowrap"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- ACTION SHEET: Edit / Hapus -->
     <div id="actionModal" onclick="if(event.target===this) closeActionModal()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 hidden">
@@ -1323,6 +1480,8 @@
                 moveTabIndicator(activeBtn, true);
             });
             initCurveInteraction();
+            initStatsSheet();
+            initHeatmapSwipe();
             
             let hadCachedRender = false;
             const cachedData = localStorage.getItem('tradingDataCache');
@@ -1625,6 +1784,11 @@
             const bgCard = isProfit ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5';
             const totalIdr = formatRupiah(pnlNum * currentKursIdr);
 
+            // Badge posisi di samping nama koin: S merah = Short, L hijau = Long
+            const sideName = getTradeSide(item);
+            const sideLetter = sideName === 'Short' ? 'S' : 'L';
+            const sideBg = sideName === 'Short' ? '#F6465D' : '#2EBD85';
+
             const shouldAnimate = forceAnimate || animateRows;
             const div = document.createElement('div');
             div.className = `row-card entrance-item ${shouldAnimate ? 'rise-in' : ''} p-2.5 sm:p-3 rounded-xl border ${bgCard} flex items-center justify-between hover:border-slate-700 transition gap-1.5 cursor-pointer select-none`;
@@ -1636,8 +1800,11 @@
                     </div>
                     <div class="text-[9px] sm:text-[10px] font-semibold ${isProfit ? 'text-emerald-500' : 'text-rose-500'} uppercase mt-0.5">${isProfit ? 'PROFIT' : 'LOSS'}</div>
                 </div>
-                <div class="w-[28%] text-center px-1">
-                    <div class="font-display font-bold text-xs sm:text-sm text-white truncate">${item.pair}</div>
+                <div class="w-[28%] px-1">
+                    <div class="flex items-center justify-center gap-1.5 min-w-0">
+                        <span class="shrink-0 inline-flex items-center justify-center rounded-[4px] text-white font-bold text-[9px] sm:text-[10px] w-[15px] h-[15px] sm:w-4 sm:h-4" style="background:${sideBg}" title="${sideName}">${sideLetter}</span>
+                        <span class="font-display font-bold text-xs sm:text-sm text-white truncate">${item.pair}</span>
+                    </div>
                 </div>
                 <div class="w-[34%] text-right min-w-0">
                     <div class="num font-bold text-xs sm:text-sm ${pnlColor} whitespace-nowrap">${isProfit ? '+' : ''}${pnlNum.toFixed(2)} USDT</div>
@@ -1891,7 +2058,9 @@
 
             // isian animasi di kartu selama ditahan
             heroPressEl = e.currentTarget;
-            heroPressEl.classList.add('hold-target', 'holding');
+            heroPressEl.classList.add('hold-target');
+            void heroPressEl.offsetWidth; // paksa render dulu biar isian selalu jalan dari kiri
+            heroPressEl.classList.add('holding');
             heroPressEl.style.setProperty('--hold-ms', HOLD_HERO_MS + 'ms');
 
             heroLongPressTimer = setTimeout(() => {
@@ -3006,11 +3175,19 @@
         let lastQuickStats = { daily: 0, weekly: 0, monthly: 0 };
         let isQuickStatsIdrView = false;
 
+        // Isi kotak Statistik ditulis ke 2 tempat: widget desktop & laci HP
+        function setStatsHTML(html) {
+            ['quickStatsGrid', 'sheetStatsGrid'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = html;
+            });
+        }
+
         function renderQuickStats(history) {
             const grid = document.getElementById('quickStatsGrid');
             if (!grid) return;
             if (!history || history.length === 0) {
-                grid.innerHTML = '<p class="text-[11px] text-[var(--text-faint)] col-span-3 text-center py-2">Belum ada data.</p>';
+                setStatsHTML('<p class="text-[11px] text-[var(--text-faint)] col-span-3 text-center py-2">Belum ada data.</p>');
                 lastQuickStats = { daily: 0, weekly: 0, monthly: 0 };
                 return;
             }
@@ -3065,7 +3242,7 @@
                 `;
             };
 
-            grid.innerHTML = cell('Avg Harian', lastQuickStats.daily) + cell('Avg Mingguan', lastQuickStats.weekly) + cell('Avg Bulanan', lastQuickStats.monthly);
+            setStatsHTML(cell('Avg Harian', lastQuickStats.daily) + cell('Avg Mingguan', lastQuickStats.weekly) + cell('Avg Bulanan', lastQuickStats.monthly));
         }
 
         function toggleQuickStatsView() {
@@ -3073,11 +3250,50 @@
             renderQuickStatsGrid();
         }
 
-        function changeHeatmapMonth(delta) {
+        function changeHeatmapMonth(delta, animate) {
             heatmapMonth += delta;
             if (heatmapMonth > 11) { heatmapMonth = 0; heatmapYear++; }
             if (heatmapMonth < 0) { heatmapMonth = 11; heatmapYear--; }
             renderHeatmap(cachedGlobalResponse.history || []);
+
+            // animasi geser tipis, hanya kalau dipicu swipe (tombol panah tetap tanpa animasi)
+            if (animate) {
+                const cls = delta > 0 ? 'heat-anim-next' : 'heat-anim-prev';
+                ['heatmapCalendar', 'sheetHeatmapCalendar'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.classList.remove('heat-anim-next', 'heat-anim-prev');
+                    void el.offsetWidth;
+                    el.classList.add(cls);
+                    setTimeout(() => el.classList.remove('heat-anim-next', 'heat-anim-prev'), 280);
+                });
+            }
+        }
+
+        // Swipe ke kiri = bulan berikutnya, swipe ke kanan = bulan sebelumnya
+        function initHeatmapSwipe() {
+            ['heatmapCalendar', 'sheetHeatmapCalendar'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                let sx = 0, sy = 0, tracking = false;
+                el.addEventListener('touchstart', (e) => {
+                    if (e.touches.length !== 1) { tracking = false; return; }
+                    tracking = true;
+                    sx = e.touches[0].clientX;
+                    sy = e.touches[0].clientY;
+                }, { passive: true });
+                el.addEventListener('touchend', (e) => {
+                    if (!tracking) return;
+                    tracking = false;
+                    const t = e.changedTouches[0];
+                    const dx = t.clientX - sx;
+                    const dy = t.clientY - sy;
+                    // harus cukup jauh (50px) dan dominan horizontal, biar scroll vertikal nggak kebaca swipe
+                    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+                    changeHeatmapMonth(dx < 0 ? 1 : -1, true);
+                }, { passive: true });
+                el.addEventListener('touchcancel', () => { tracking = false; }, { passive: true });
+            });
         }
 
         function renderHeatmap(history) {
@@ -3085,13 +3301,15 @@
             const monthLabel = document.getElementById('heatmapMonthLabel');
             if (!container) return;
 
-            const oldTooltip = document.getElementById('heatmapTooltip');
-            if (oldTooltip) oldTooltip.classList.remove('show', 'hide');
+            document.querySelectorAll('.heatmap-tooltip').forEach(t => t.classList.remove('show', 'hide'));
 
             const year = heatmapYear;
             const month = heatmapMonth;
             const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            if (monthLabel) monthLabel.textContent = `${monthNames[month]} ${year}`;
+            ['heatmapMonthLabel', 'sheetHeatmapMonthLabel'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = `${monthNames[month]} ${year}`;
+            });
 
             const dailyMap = {};
             (history || []).forEach(item => {
@@ -3129,12 +3347,16 @@
                 cellsHtml += `<div class="aspect-square lg:aspect-auto rounded-md flex items-center justify-center text-[9px] font-medium cursor-pointer" style="background:${bg}; color:${textColor}" onclick="showHeatmapDayDetail(event, ${day}, ${valAttr})">${day}</div>`;
             }
 
-            container.innerHTML = `<div class="grid grid-cols-7 gap-1 lg:h-full lg:grid-rows-[auto_repeat(6,1fr)]">${cellsHtml}</div>`;
+            const calendarHtml = `<div class="grid grid-cols-7 gap-1 lg:h-full lg:grid-rows-[auto_repeat(6,1fr)]">${cellsHtml}</div>`;
+            ['heatmapCalendar', 'sheetHeatmapCalendar'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = calendarHtml;
+            });
         }
 
         function showHeatmapDayDetail(e, day, val) {
-            const tooltip = document.getElementById('heatmapTooltip');
             const card = e.currentTarget.closest('.porto-card');
+            const tooltip = card ? card.querySelector('.heatmap-tooltip') : null;
             if (!tooltip || !card) return;
 
             let html;
@@ -3213,6 +3435,7 @@
                 closeResultCardModal();
                 closeTradeShareModal();
                 closeDailyShareModal();
+                closeStatsSheet();
             }
         });
 
@@ -3225,11 +3448,196 @@
             else if (isOpen('deleteModal')) closeDeleteModal();
             else if (isOpen('editModal')) closeEditModal();
             else if (isOpen('actionModal')) closeActionModal();
+            else if (statsSheetOpen) closeStatsSheet();
         });
+
+        // ══════════════════════════════════════════════════════════
+        //  LACI STATISTIK & KALENDER (khusus HP)
+        //  Panah tumpul mengambang di paling bawah layar. Ketuk atau tarik ke atas ->
+        //  laci naik berisi Statistik + Kalender aktivitas (isi sama dengan versi desktop).
+        //  Tutup: tarik ke bawah, ketuk area gelap, tombol Kembali, atau Esc.
+        //  Angka-angka tuning ada di bagian "keputusan buka/tutup" di bawah.
+        // ══════════════════════════════════════════════════════════
+        let statsSheetOpen = false;
+        let sheetProg = 0, sheetProgRaf = 0;
+        const SHEET_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // p = 0 laci tertutup (panah ATAS di dock), p = 1 laci terbuka (panah BAWAH di pegangan).
+        // Di tengah, panah melurus jadi garis lalu berbalik arah.
+        function paintSheetProgress(p) {
+            sheetProg = p;
+            const dockMid = 3 + 5 * Math.min(1, p * 2.4);
+            const g = Math.max(0, (p - 0.3) / 0.7);
+            const grabMid = 8 + 5 * (1 - Math.pow(1 - g, 3));
+            const dp = document.getElementById('statsDockPoly');
+            const gp = document.getElementById('statsGrabPoly');
+            if (dp) dp.setAttribute('points', `6,8 22,${dockMid.toFixed(2)} 38,8`);
+            if (gp) gp.setAttribute('points', `6,8 22,${grabMid.toFixed(2)} 38,8`);
+        }
+        function tweenSheetProgress(to) {
+            cancelAnimationFrame(sheetProgRaf);
+            if (SHEET_REDUCED) { paintSheetProgress(to); return; }
+            const from = sheetProg, t0 = performance.now(), ms = 380;
+            const step = (t) => {
+                const k = Math.min(1, (t - t0) / ms);
+                paintSheetProgress(from + (to - from) * (1 - Math.pow(1 - k, 3)));
+                if (k < 1) sheetProgRaf = requestAnimationFrame(step);
+            };
+            sheetProgRaf = requestAnimationFrame(step);
+        }
+
+        function setStatsSheet(open) {
+            const sheet = document.getElementById('statsSheet');
+            const backdrop = document.getElementById('statsSheetBackdrop');
+            if (!sheet || !backdrop) return;
+            const changed = open !== statsSheetOpen;
+            statsSheetOpen = open;
+            sheet.classList.toggle('open', open);
+            backdrop.classList.toggle('open', open);
+            document.body.classList.toggle('stats-open', open);
+            sheet.setAttribute('aria-hidden', String(!open));
+            tweenSheetProgress(open ? 1 : 0);
+            if (changed) { if (open) previewModalOpened(); else previewModalClosed(); }
+        }
+        function openStatsSheet() { setStatsSheet(true); }
+        function closeStatsSheet() { setStatsSheet(false); }
+
+        function initStatsSheet() {
+            const dock = document.getElementById('statsHandle');
+            const sheet = document.getElementById('statsSheet');
+            const backdrop = document.getElementById('statsSheetBackdrop');
+            const grab = document.getElementById('statsSheetGrab');
+            const body = sheet && sheet.querySelector('.stats-sheet-body');
+            if (!dock || !sheet || !backdrop || !grab || !body) return;
+
+            let drag = null;
+
+            const apply = (offset) => {
+                drag.offset = offset;
+                const p = 1 - offset / drag.sheetH;
+                sheet.style.transform = `translateY(${offset}px)`;
+                backdrop.style.opacity = String(Math.max(0, Math.min(1, p)));
+                dock.style.opacity = String(Math.max(0, 1 - p * 2));
+                dock.style.transform = `translateY(${Math.min(1, p) * 100}%)`;
+                cancelAnimationFrame(sheetProgRaf);
+                paintSheetProgress(p);
+            };
+
+            const begin = (y, fromOpen, lead) => {
+                const h = sheet.getBoundingClientRect().height || sheet.offsetHeight || 1;
+                drag = { fromOpen, sheetH: h, startY: y, lastY: y, lastT: performance.now(), vel: 0, lead: lead || 0, moved: false, offset: fromOpen ? 0 : h };
+            };
+
+            const move = (y) => {
+                if (!drag) return;
+                const dy = y - drag.startY;
+                if (!drag.moved) {
+                    if (Math.abs(dy) < 6) return;      // masih dianggap ketukan
+                    drag.moved = true;
+                    sheet.classList.add('dragging');
+                }
+                if (drag.fromOpen) {
+                    apply(Math.max(0, Math.min(drag.sheetH, dy)));
+                } else {
+                    const up = Math.max(0, -dy);
+                    const lead = drag.lead * Math.min(1, up / 40);   // ujung laci menyusul jari pelan-pelan
+                    apply(Math.max(0, Math.min(drag.sheetH, drag.sheetH - (up + lead))));
+                }
+                const now = performance.now(), dt = now - drag.lastT;
+                if (dt > 0) drag.vel = (y - drag.lastY) / dt;     // px/ms, negatif = ke atas
+                drag.lastY = y;
+                drag.lastT = now;
+            };
+
+            const end = () => {
+                if (!drag) return;
+                const d = drag;
+                drag = null;
+                if (!d.moved) { setStatsSheet(!d.fromOpen); return; }   // ketukan biasa = buka / tutup
+
+                sheet.classList.remove('dragging');
+                void sheet.offsetHeight;
+                sheet.style.transform = '';
+                backdrop.style.opacity = '';
+
+                // flick cepat (> 0.45 px/ms) menang; kalau pelan, lewat setengah = buka
+                const FLICK = 0.45;
+                const shouldOpen = d.vel < -FLICK ? true : (d.vel > FLICK ? false : d.offset < d.sheetH * 0.5);
+                setStatsSheet(shouldOpen);
+                dock.style.opacity = '';
+                dock.style.transform = '';
+            };
+
+            // Dock: tarik ke atas dari panel / zona bawah layar
+            dock.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                begin(e.clientY, false, Math.max(0, window.innerHeight - e.clientY));
+                try { dock.setPointerCapture(e.pointerId); } catch (err) {}
+            });
+            dock.addEventListener('pointermove', (e) => move(e.clientY));
+            dock.addEventListener('pointerup', end);
+            dock.addEventListener('pointercancel', end);
+            dock.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStatsSheet(true); }
+            });
+
+            // Pegangan laci (khusus mouse; sentuhan ditangani di bawah)
+            grab.addEventListener('pointerdown', (e) => {
+                if (e.pointerType !== 'mouse' || e.button !== 0) return;
+                begin(e.clientY, true, 0);
+                try { grab.setPointerCapture(e.pointerId); } catch (err) {}
+            });
+            grab.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') move(e.clientY); });
+            grab.addEventListener('pointerup', (e) => { if (e.pointerType === 'mouse') end(); });
+
+            // Laci terbuka: tarik ke bawah di MANA SAJA di area panel = tutup.
+            // Kalau isi laci lagi ke-scroll (bukan di paling atas), tarikan dianggap scroll biasa.
+            let tch = null;
+            sheet.addEventListener('touchstart', (e) => {
+                if (e.touches.length !== 1) { tch = null; return; }
+                const p = e.touches[0];
+                tch = { x: p.clientX, y: p.clientY, mode: null };
+            }, { passive: true });
+            sheet.addEventListener('touchmove', (e) => {
+                if (!tch) return;
+                const p = e.touches[0];
+                if (!tch.mode) {
+                    const dx = p.clientX - tch.x, dy = p.clientY - tch.y;
+                    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+                    const ok = dy > 0 && Math.abs(dy) > Math.abs(dx) && (body.scrollTop <= 0 || grab.contains(e.target));
+                    tch.mode = ok ? 'sheet' : 'other';
+                    if (ok) begin(tch.y, true, 0);
+                }
+                if (tch.mode === 'sheet') {
+                    if (e.cancelable) e.preventDefault();
+                    move(p.clientY);
+                }
+            }, { passive: false });
+            const tEnd = (e) => {
+                if (tch && tch.mode === 'sheet') end();
+                else if (tch && !tch.mode && e.type === 'touchend' && grab.contains(e.target)) closeStatsSheet();
+                tch = null;
+            };
+            sheet.addEventListener('touchend', tEnd);
+            sheet.addEventListener('touchcancel', tEnd);
+
+            // Panel disembunyikan waktu keyboard muncul (lagi ngisi form)
+            document.addEventListener('focusin', (e) => {
+                if (e.target && e.target.matches && e.target.matches('input, textarea, select')) document.body.classList.add('kb-open');
+            });
+            document.addEventListener('focusout', () => document.body.classList.remove('kb-open'));
+
+            // Kalau layar dilebarkan ke ukuran desktop saat laci kebuka, tutup otomatis
+            window.addEventListener('resize', () => {
+                if (statsSheetOpen && !window.matchMedia('(max-width: 767px)').matches) closeStatsSheet();
+            });
+
+            paintSheetProgress(0);
+        }
 
         function handleError(err) {
             console.error(err);
         }
     </script>
 </body>
-</html>
+</html>                        
